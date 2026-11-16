@@ -14,20 +14,26 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# サイドバーの横幅ドラッグ調整 & ラジオボタン大型化CSS
+# モード切替スイッチの大型化・ダークモード対応のCSS
 st.markdown(
     """
     <style>
-    section[data-testid="stSidebar"][aria-expanded="true"] {
-        resize: horizontal;
-        overflow-x: auto;
-        min-width: 260px;
-        max-width: 720px;
-    }
+    /* モード切替のラジオボタンを大型のトグル風パネルにする */
     div.stRadio > div[role="radiogroup"] {
-        background-color: #f0f2f6;
-        padding: 10px;
-        border-radius: 10px;
+        background-color: var(--secondary-background-color);
+        padding: 15px 25px;
+        border-radius: 12px;
+        border: 2px solid var(--primary-color);
+        display: flex;
+        justify-content: space-around;
+    }
+    div.stRadio > div[role="radiogroup"] label {
+        cursor: pointer;
+    }
+    div.stRadio > div[role="radiogroup"] p {
+        font-size: 1.3rem !important;
+        font-weight: bold !important;
+        color: var(--text-color);
     }
     </style>
     """,
@@ -44,7 +50,7 @@ LMIN_TO_M3S = 1.0 / 60000.0  # [l/min] -> [m^3/s] 換算係数
 
 
 # ==========================================
-# 1. 水理・洗掘・流砂量 共通コアエンジン関数群 (Ver. 3.2)
+# 1. 水理・洗掘・流砂量 共通コアエンジン関数群
 # ==========================================
 def calc_kinematic_viscosity(temp_c: float) -> float:
     t_clipped = min(max(temp_c, 0.0), 40.0)
@@ -226,9 +232,9 @@ def calc_equivalent_time_star(Kt_star: float, te_sec: float, V_Vc: float) -> flo
 # 2. タイトル & 大型モード切替ラジオボタン
 # ==========================================
 st.title(":material/waves: 橋脚局所洗掘 時間発展予測・実験検証システム")
-st.caption("Ver. 3.2 ｜ 静的洗掘＆動的洗掘統合解析 ＋ 実用給砂レート [g/s] 補正 ＋ 実験誤差検証")
+st.caption("Ver. 3.3 ｜ ダークモード＆UI改善 ＋ 定常/非定常統合解析 ＋ 実用給砂レート [g/s]")
 
-# 選択モードが分かりやすい大型ラジオボタンとアラートバナー
+# 選択モードが分かりやすい大型ラジオボタン
 mode = st.radio(
     "📝 計算モードの選択",
     ["定常流モード (Steady)", "非定常流モード (Unsteady)"],
@@ -396,8 +402,15 @@ if not is_unsteady:
     fig.add_trace(go.Scatter(x=plot_df["time_min"], y=plot_df["Kt_percent"], mode="lines", name="到達率 Kt [%]", line=dict(color="#ff7f0e", width=2, dash="dash")), secondary_y=True)
 
     fig.update_layout(
-        title="洗掘深 ds(t) および到達率 Kt の時間発展曲線", xaxis_title="通水時間 t [min]", xaxis_type=x_axis_mode,
-        hovermode="x unified", dragmode=False, legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1), margin=dict(l=20, r=20, t=60, b=20), height=440
+        title="洗掘深 ds(t) および到達率 Kt の時間発展曲線",
+        xaxis_title="通水時間 t [min]",
+        xaxis_type=x_axis_mode,
+        hovermode="x unified",
+        dragmode=False,
+        # 凡例をグラフの下側に配置してタイトルとの重なりを回避
+        legend=dict(orientation="h", yanchor="top", y=-0.2, xanchor="center", x=0.5),
+        margin=dict(l=20, r=20, t=60, b=20),
+        height=500
     )
     fig.update_xaxes(fixedrange=True)
     fig.update_yaxes(title_text="洗掘深 ds [mm]", secondary_y=False, rangemode="tozero", fixedrange=True)
@@ -498,7 +511,14 @@ else:
     fig_u.add_trace(go.Scatter(x=df_unsteady["time_min"], y=df_unsteady["dse_mm"], mode="lines", name="dse(t) [mm]", line=dict(color="#d62728", width=1.8, dash="dash")), row=3, col=1)
     fig_u.add_trace(go.Scatter(x=df_unsteady["time_min"], y=df_unsteady["ds_mm"], mode="lines", name="ds(t) [mm]", line=dict(color="#2ca02c", width=3)), row=3, col=1)
 
-    fig_u.update_layout(hovermode="x unified", dragmode=False, legend=dict(orientation="h", yanchor="bottom", y=1.03, xanchor="right", x=1), margin=dict(l=20, r=20, t=80, b=20), height=760)
+    fig_u.update_layout(
+        hovermode="x unified",
+        dragmode=False,
+        # 余白を広げて凡例を一番上に配置し、タイトルとの重なりを回避
+        legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1),
+        margin=dict(l=20, r=20, t=100, b=20),
+        height=800
+    )
     fig_u.update_xaxes(fixedrange=True)
     fig_u.update_yaxes(title_text="Q [l/min]", row=1, col=1, secondary_y=False, rangemode="tozero", fixedrange=True)
     fig_u.update_yaxes(title_text="給砂 [g/s]", row=2, col=1, secondary_y=False, rangemode="tozero", fixedrange=True)
